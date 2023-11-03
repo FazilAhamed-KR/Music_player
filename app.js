@@ -99,10 +99,11 @@ const UIController = (function () {
   };
 
 
-  var songUrls = [
-  
-    // Add more song URLs here
-];
+  var songUrls = [];
+  var songImageUrls = [];
+  var songTitle = [];
+  var songartists = [];
+
   //public methods
   return {
     //method to get input fields`
@@ -135,9 +136,14 @@ const UIController = (function () {
    
   
     // need method to create a track list group item
-    createTrack(id, name,previewUrl) {
+    createTrack(id, name,previewUrl,img,artists) {
       //console.log(previewUrl);
+      // console.log(artists);
+      songartists.push(artists)
+      songTitle.push(name)
+      songImageUrls.push(img)
       songUrls.push(previewUrl);
+      
   
       
       const html = `<a href="#" class="list-group-item list-group-item-action list-group-item-light" id="${id}">${name}</a>`;
@@ -148,8 +154,10 @@ const UIController = (function () {
 
     // need method to create the song detail
     createTrackDetail(img, title, artist, songUrl) {
+      // console.log(artist);
       //console.log(songUrls,'fayas222');
       const detailDiv = document.querySelector(DOMElements.divSongDetail);
+
       // any time user clicks a new song, we need to clear out the song detail div
       detailDiv.innerHTML = "";
 
@@ -159,11 +167,11 @@ const UIController = (function () {
             <div class="music-player">
             <div class="album-art text-center">
             <div class="row col-sm-12 px-0">
-                <img src="${img}" alt="">        
+                <img src="${img}" alt="" id ="image">        
             </div>
             <div class="song-info text-center">
-                        <h5>${title}</h5>
-                        <p>Artist Name : ${artist}</p>
+                        <h5 id="title" >${title}</h5>
+                        <p id="artist">${artist}</p>
                     </div>   
             <div class="iconsContainer">
             <div class="icons">
@@ -186,14 +194,20 @@ const UIController = (function () {
       const nextButton = document.getElementById("nextButton");
       nextButton.addEventListener("click", playNextSong,false);
       nextButton.songUrls = songUrls;
+      nextButton.songImageUrls = songImageUrls;
+      nextButton.songTitle = songTitle;
+      nextButton.songartists = songartists;
       
       const prevButton = document.getElementById("prevButton");
       prevButton.addEventListener("click", playPreviousSong,false);
       prevButton.songUrls = songUrls;
+      prevButton.songImageUrls = songImageUrls;
+      prevButton.songTitle = songTitle;
+      prevButton.songartists = songartists;
     
       const audio = document.getElementById("myAudio");
       audio.addEventListener("ended", playNextSong, false);
-
+      // audio = songUrls
     },
 
     resetTrackDetail() {
@@ -230,15 +244,31 @@ let currentSongIndex = 0;
 
 function playPreviousSong(evt) {
   let songUrls = evt.currentTarget.songUrls;
+  let songImageUrls = evt.currentTarget.songImageUrls;
+  let songTitle = evt.currentTarget.songTitle;
+  let songartists = evt.currentTarget.songartists;
     if (currentSongIndex > 0) {
         currentSongIndex--;
     } else {
         currentSongIndex = songUrls.length - 1; // Wrap around to the last song if at the beginning of the list
     }
-
+    changeitem(currentSongIndex,songImageUrls,songartists);
+    changeTitle(currentSongIndex,songTitle);
     const audio = document.getElementById("myAudio");
     audio.src = songUrls[currentSongIndex];
     audio.play(); // Auto-play the previous song
+}
+
+function changeitem(currentSongIndex,songImageUrls,songartists) {
+  const image = document.getElementById("image")
+  image.src = songImageUrls[currentSongIndex];
+  const art = document.getElementById("artist")
+  art.textContent = songartists[currentSongIndex];
+}
+
+function changeTitle(currentSongIndex,songTitle) {
+  const Title = document.getElementById("title")
+  Title.textContent = songTitle[currentSongIndex];
 }
 
 // Add event listeners to the next and previous buttons
@@ -260,17 +290,32 @@ function playAudio() {
   function playNextSong(evt) {
 
     let songUrls = evt.currentTarget.songUrls;
+    let songImageUrls = evt.currentTarget.songImageUrls;
+    let songTitle = evt.currentTarget.songTitle;
+    let songartists = evt.currentTarget.songartists;
     // console.log(evt.currentTarget.songUrls,'fayas111');
       if (currentSongIndex < songUrls.length - 1) {
           currentSongIndex++;
       } else {
           currentSongIndex = 0; // Wrap around to the first song if at the end of the list
       }
-  
+      changeitem(currentSongIndex,songImageUrls,songartists);
+      changeTitle(currentSongIndex,songTitle);
       const audio = document.getElementById("myAudio");
       audio.src = songUrls[currentSongIndex];
       audio.play(); // Auto-play the next song
   };  
+  // function changeImage(currentSongIndex,songImageUrls) {
+  //   const image = document.getElementById("image")
+  //   image.src = songImageUrls[currentSongIndex];
+  // }
+
+  // function changeTitle(currentSongIndex,songTitle) {
+  //   const Title = document.getElementById("title")
+  //   Title.textContent = songTitle[currentSongIndex];
+  // }
+
+
 
 const APPController = (function (UICtrl, APICtrl) {
   // get input field object ref
@@ -320,8 +365,8 @@ const APPController = (function (UICtrl, APICtrl) {
     // get the list of tracks
     const tracks = await APICtrl.getTracks(token, tracksEndPoint);
     // create a track list item
-    //console.log(tracks,'tracks11')
-    tracks.forEach((el) => UICtrl.createTrack(el.track.href, el.track.name,el.track.preview_url));
+    console.log(tracks,'tracks11')
+    tracks.forEach((el) => UICtrl.createTrack(el.track.href, el.track.name,el.track.preview_url,el.track.album.images[1].url,el.track.artists[0].name));
   });
 
 
@@ -341,7 +386,7 @@ const APPController = (function (UICtrl, APICtrl) {
     console.log(track);
     // load the track details
     UICtrl.createTrackDetail(
-      track.album.images[2].url,
+      track.album.images[1].url,
       track.name,
       track.artists[0].name,
       track.preview_url
